@@ -33,7 +33,7 @@ async function getData() {
             return pages.length / 2 - 4; // account for extra elements and doubling
             });
         
-        console.log("Num pages: " + numPages)
+        console.log("Number of pages: " + numPages)
 
         for (let i = 1; i <= numPages; ++i){
             let page = await browser.newPage();
@@ -44,22 +44,22 @@ async function getData() {
 
             let papersInfo = await page.evaluate(() => {
                 let paperTitle = document.querySelectorAll(".part-link")
-                let analytics_link = document.querySelectorAll(".altmetric-embed > a")
+                let analytics_link = document.querySelectorAll(".altmetric-embed.medium-1 > a")
                 let paperInfoArray = []
-                for (let i = 0; i < paperTitle.length; i++) {
+                for (let i = 0; i < analytics_link.length; i++) {
                     paperInfoArray[i] = {
                         title: paperTitle[i].innerText.trim(),
-                        link: "https://www.cambridge.org/" + paperTitle[i].getAttribute("href"),
+                        link: "https://www.cambridge.org" + paperTitle[i].getAttribute("href"),
                         analytics_link: "https://cambridge.altmetric.com/details/" + analytics_link[i].getAttribute("href").substr(75) + "/twitter" 
                     };
                 }
                 return paperInfoArray;
             });
             papers = papers.concat(papersInfo); 
-            console.log("Got data " + i) 
+            console.log("Got data from page " + i) 
         }
 
-        console.log("Now getting twitter Data for pages");
+        console.log("Now getting twitter data for pages");
 
         // Get analytics data
         for(let j = 0; j < papers.length; ++j) {
