@@ -22,6 +22,7 @@ papers = []
 
 async function getData() {
     try {
+        const browser = await puppeteer.launch()
         console.log("Number of pages: " + numPagesToAnalyze)
 
         for (let i = 1; i <= numPagesToAnalyze; ++i){
@@ -71,8 +72,12 @@ async function getData() {
                 let beginIndex = attention_url.indexOf("score=") + 6;
                 let endIndex = attention_url.indexOf("&", beginIndex);
                 let attention_score = attention_url.substr(beginIndex, endIndex - beginIndex);
-
-                return [parseInt(attention_score), twitter_data[0].innerText, twitter_data[1].innerText, twitter_data[2].innerText]
+                if (twitter_data.length == 3){
+                    return [parseInt(attention_score), twitter_data[0].innerText, twitter_data[1].innerText, twitter_data[2].innerText]
+                }
+                else{
+                    return [parseInt(attention_score), twitter_data[0].innerText, 1, twitter_data[1].innerText]
+                }
             })
         }
         await browser.close()
