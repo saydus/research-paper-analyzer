@@ -1,0 +1,31 @@
+{
+  "name": "research-paper-analyzer",
+  "version": "1.0.0",
+  "description": "A script to scrape and analyze the popularity and citations of recent research papers from Cambridge University Press. -- Built for Media and Inequality Lab at Vanderbilt University.",
+  "main": "scraper.js",
+  "dependencies": {
+    "csv-parser": "^2.3.3",
+    "csv-writer": "^1.6.0",
+    "puppeteer": "^5.5.0",
+    "selenium-webdriver": "^4.0.0-alpha.7"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.9.0",
+    "@typescript-eslint/parser": "^4.9.0",
+    "eslint": "^7.14.0",
+    "eslint-config-google": "^0.14.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saydus/research-paper-analyzer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/saydus/research-paper-analyzer/issues"
+  },
+  "homepage": "https://github.com/saydus/research-paper-analyzer#readme"
+}
