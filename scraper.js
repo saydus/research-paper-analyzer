@@ -56,7 +56,7 @@ async function getData() {
 
         // Get analytics data
         for(let j = 0; j < papers.length; ++j) {
-            console.log("Getting popularity data for paper " + j);
+            console.log("Getting popularity data for paper " + (j + 1));
             paper = papers[j];
             let url = paper.analytics_link;
             let analytics_page = await browser.newPage();
@@ -73,6 +73,9 @@ async function getData() {
                 let endIndex = attention_url.indexOf("&", beginIndex);
                 let attention_score = attention_url.substr(beginIndex, endIndex - beginIndex);
                 if (twitter_data.length == 3){
+                    if(twitter_data[2].innerText === "Altmetric Attention Score"){
+                        return [parseInt(attention_score), 0, 0, 0]
+                    }
                     return [parseInt(attention_score), twitter_data[0].innerText, twitter_data[1].innerText, twitter_data[2].innerText]
                 }
                 else{
