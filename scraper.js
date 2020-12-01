@@ -9,6 +9,7 @@ const csvWriter = createCsvWriter({
     {id: 'title', title: 'Title'},
     {id: 'link', title: 'Cambridge link'},
     {id: 'analytics_link', title: 'Link to Altmetric'},
+    {id: 'date', title: 'Date of online publication'},
     {id: 'attention', title: 'Attention Score'},
     {id: 'tweets', title: 'Number of tweets'},
     {id: 'users', title: 'Number of users tweeted'},
@@ -16,39 +17,30 @@ const csvWriter = createCsvWriter({
   ]
 });
 
-
+let numPagesToAnalyze = 9
 papers = []
 
 async function getData() {
     try {
-        const listURL = 'https://www.cambridge.org/core/journals/american-political-science-review/latest-issue'
-        const browser = await puppeteer.launch()
-        const listPage = await browser.newPage()
+        console.log("Number of pages: " + numPagesToAnalyze)
 
-        await listPage.goto(listURL)
-        await listPage.waitForSelector("ul.pagination > li")
-        
-        let numPages = await listPage.evaluate(() => {
-            let pages = document.querySelectorAll("ul.pagination > li");
-            return pages.length / 2 - 4; // account for extra elements and doubling
-            });
-        
-        console.log("Number of pages: " + numPages)
-
-        for (let i = 1; i <= numPages; ++i){
+        for (let i = 1; i <= numPagesToAnalyze; ++i){
             let page = await browser.newPage();
-            await page.goto(`https://www.cambridge.org/core/journals/american-political-science-review/latest-issue?pageNum=${i}`)
+            await page.goto(`https://www.cambridge.org/core/journals/american-political-science-review/most-cited?pageNum=${i}`)
             page.waitForSelector("div.altmetric-embed > a")
 
             console.log("Analayzing page " + i);
 
             let papersInfo = await page.evaluate(() => {
                 let paperTitle = document.querySelectorAll(".part-link")
+                let paperDate = document.querySelectorAll(".published .date")
                 let analytics_link = document.querySelectorAll(".altmetric-embed.medium-1 > a")
                 let paperInfoArray = []
+                // let offset_for_date = paperDate.length / 2;
                 for (let i = 0; i < analytics_link.length; i++) {
                     paperInfoArray[i] = {
                         title: paperTitle[i].innerText.trim(),
+                        date : paperDate[i].innerText.trim(),
                         link: "https://www.cambridge.org" + paperTitle[i].getAttribute("href"),
                         analytics_link: "https://cambridge.altmetric.com/details/" + analytics_link[i].getAttribute("href").substr(75) + "/twitter" 
                     };
