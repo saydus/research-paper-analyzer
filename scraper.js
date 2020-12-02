@@ -13,7 +13,8 @@ const csvWriter = createCsvWriter({
     {id: 'attention', title: 'Attention Score'},
     {id: 'tweets', title: 'Number of tweets'},
     {id: 'users', title: 'Number of users tweeted'},
-    {id: 'upper_bound', title: 'Upper bound of followers'}
+    {id: 'upper_bound', title: 'Upper bound of followers'},
+    {id: 'citations_num', title: 'Number of citations'}
   ]
 });
 
@@ -36,6 +37,7 @@ async function getData() {
                 let paperTitle = document.querySelectorAll(".part-link")
                 let paperDate = document.querySelectorAll(".published .date")
                 let analytics_link = document.querySelectorAll(".altmetric-embed.medium-1 > a")
+                let citations_num = document.querySelectorAll(".listing-citation-modal > .number") 
                 let paperInfoArray = []
                 // let offset_for_date = paperDate.length / 2;
                 for (let i = 0; i < analytics_link.length; i++) {
@@ -43,7 +45,8 @@ async function getData() {
                         title: paperTitle[i].innerText.trim(),
                         date : paperDate[i].innerText.trim(),
                         link: "https://www.cambridge.org" + paperTitle[i].getAttribute("href"),
-                        analytics_link: "https://cambridge.altmetric.com/details/" + analytics_link[i].getAttribute("href").substr(75) + "/twitter" 
+                        analytics_link: "https://cambridge.altmetric.com/details/" + analytics_link[i].getAttribute("href").substr(75) + "/twitter",
+                        citations_num: citations_num[i].innerText.trim()
                     };
                 }
                 return paperInfoArray;
