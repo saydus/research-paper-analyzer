@@ -24,7 +24,7 @@ papers = []
 async function getData() {
     try {
         const browser = await puppeteer.launch()
-        console.log("Number of pages: " + numPagesToAnalyze)
+        console.log(`Number of pages: ${numPagesToAnalyze}`)
 
         for (let i = 1; i <= numPagesToAnalyze; ++i){
             let page = await browser.newPage();
@@ -59,8 +59,8 @@ async function getData() {
 
         // Get analytics data
         for(let j = 0; j < papers.length; ++j) {
+            let paper = papers[j]
             console.log("Getting popularity data for paper " + (j + 1));
-            paper = papers[j];
             let url = paper.analytics_link;
             let analytics_page = await browser.newPage();
             await analytics_page.goto(url);
@@ -75,17 +75,18 @@ async function getData() {
                 let beginIndex = attention_url.indexOf("score=") + 6;
                 let endIndex = attention_url.indexOf("&", beginIndex);
                 let attention_score = attention_url.substr(beginIndex, endIndex - beginIndex);
-                if (twitter_data.length == 3){
-                    if(twitter_data[2].innerText === "Altmetric Attention Score"){
-                        return [parseInt(attention_score), 0, 0, 0]
-                    }
+                if (twitter_data.length == 3){ 
                     return [parseInt(attention_score), twitter_data[0].innerText, twitter_data[1].innerText, twitter_data[2].innerText]
                 }
-                else{
+                else if (twitter_data.length == 2){
                     return [parseInt(attention_score), twitter_data[0].innerText, 1, twitter_data[1].innerText]
                 }
-            })
+                else {
+                    return [parseInt(attention_score), 0, 0, 0];
+                }
+            }) 
         }
+
         await browser.close()
     } catch (error) {
         console.error(error)
