@@ -19,74 +19,78 @@ const csvWriter = createCsvWriter({
   ]
 });
 
-let numPagesToAnalyze = 10
-const pagesDisplayed = 7
-papers = []
+sleep = milliseconds => {
+    const date = Date.now();
+    let currentDate = null;
+    do {
+      currentDate = Date.now();
+    } while (currentDate - date < milliseconds);
+  }
+
+
+let papers = []
+let numPages = 10
 
 async function getData() {
     try {
+        // Load the headless browser adn the first page
         const browser = await puppeteer.launch()
-        console.log(`Number of pages: ${numPagesToAnalyze}`)
-
         let page = await browser.newPage();
 
         await page.goto(`https://www.cambridge.org/core/journals/american-political-science-review/most-cited`)
         page.waitForSelector("div.altmetric-embed > a")
 
         // click  on Last 3 years
-        console.log("Clicking the button")
-        const lastYearsButton = await page.$(".sort-content  .checkbox[data-agg-container='Last 3 years']");
+        console.log("Clicking the last 3 years button")
+        const lastYearsButton = await page.$(".sort-content  .checkbox[data-agg-container='Last 3 years'] .styled");
         await lastYearsButton.evaluate(lastYearsButton => lastYearsButton.click());
-        console.log("Clicked the button")
+        await page.waitForNavigation();
+        await page.waitForTimeout(2000);
+        console.log("Clicked it")
         
-        // TODO: wait a second
-        sleep(1000);
+        // Iterate through the last 3 years
+        for (let i = 1; i <= numPages; ++i){
+            console.log("Analayzing page " + i)
 
-        while(numPagesToAnalyze != 0){
-            currentPageNum = (numPagesToAnalyze > pagesDisplayed) ? pagesDisplayed : numPagesToAnalyze;
-            numPagesToAnalyze -= currentPageNum;
+            let papersInfo = await page.evaluate(() => {
+                let paperTitle = document.querySelectorAll(".part-link")
+                let paperDate = document.querySelectorAll(".published .date")
+                let analytics_link = document.querySelectorAll(".altmetric-embed.medium-1 > a")
+                let citations_num = document.querySelectorAll(".listing-citation-modal > .number") 
+                let paperInfoArray = []
 
-            for (let i = 1; i <= currentPageNum; ++i){
-                console.log("Analayzing page " + i)
-                let papersInfo = await page.evaluate(() => {
-                    let paperTitle = document.querySelectorAll(".part-link")
-                    let paperDate = document.querySelectorAll(".published .date")
-                    let analytics_link = document.querySelectorAll(".altmetric-embed.medium-1 > a")
-                    let citations_num = document.querySelectorAll(".listing-citation-modal > .number") 
-                    let paperInfoArray = []
-                    // let offset_for_date = paperDate.length / 2;
-                    for (let i = 0; i < analytics_link.length; i++) {
-                        paperInfoArray[i] = {
-                            title: paperTitle[i].innerText.trim(),
-                            date : paperDate[i].innerText.trim(),
-                            link: "https://www.cambridge.org" + paperTitle[i].getAttribute("href"),
-                            analytics_link: "https://cambridge.altmetric.com/details/" + analytics_link[i].getAttribute("href").substr(75) + "/twitter",
-                            citations_num: citations_num[i].innerText.trim()
-                        };
-                    }
-                    return paperInfoArray;
-                });
-                papers = papers.concat(papersInfo); 
-                console.log("Got data from page " + i) 
-
-                // Click on the ith page.
-                let nextPageButton = await page.$(".pagination > .current + li");
+                for (let i = 0; i < analytics_link.length; i++) {
+                    paperInfoArray[i] = {
+                        title: paperTitle[i].innerText.trim(),
+                        date : paperDate[i].innerText.trim(),
+                        link: "https://www.cambridge.org" + paperTitle[i].getAttribute("href"),
+                        analytics_link: "https://cambridge.altmetric.com/details/" + analytics_link[i].getAttribute("href").substr(75) + "/twitter",
+                        citations_num: citations_num[i].innerText.trim()
+                    };
+                }
+                return paperInfoArray;
+            });
+            papers = papers.concat(papersInfo); 
+            console.log(`Got data from page ${i}. There were ${papersInfo.length} elements found on that page.`)
+            // Click on next page
+            console.log("Clicking next page");
+            let nextPageButton = await page.$(".pagination > .current + li a");
+            if (nextPageButton){
                 await nextPageButton.evaluate(nextPageButton => nextPageButton.click());
-
-                // Wait a second
-                sleep(1000);
-
+                await page.waitForNavigation();
+                await page.waitForTimeout(2000);
             }
+            console.log("Clicked next page");
+            
         }
         
         
-
-        console.log("Now getting twitter data for pages");
+        console.log(`Now getting twitter data for ${papers.length} papers`);
 
         // Get analytics data
         for(let j = 0; j < papers.length; ++j) {
             let paper = papers[j];
-            console.log("Getting popularity data for paper " + (j + 1));
+            console.log(`Getting popularity data for paper ${j + 1}`);
             let url = paper.analytics_link;
             let analytics_page = await browser.newPage();
             await analytics_page.goto(url);
