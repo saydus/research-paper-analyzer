@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer')
 const fs = require('fs');
 const { Console } = require('console');
+const { SSL_OP_EPHEMERAL_RSA } = require('constants');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 const csvWriter = createCsvWriter({
@@ -18,7 +19,8 @@ const csvWriter = createCsvWriter({
   ]
 });
 
-let numPagesToAnalyze = 9
+let numPagesToAnalyze = 10
+const pagesDisplayed = 7
 papers = []
 
 async function getData() {
@@ -26,40 +28,64 @@ async function getData() {
         const browser = await puppeteer.launch()
         console.log(`Number of pages: ${numPagesToAnalyze}`)
 
-        for (let i = 1; i <= numPagesToAnalyze; ++i){
-            let page = await browser.newPage();
-            await page.goto(`https://www.cambridge.org/core/journals/american-political-science-review/most-cited?pageNum=${i}`)
-            page.waitForSelector("div.altmetric-embed > a")
+        let page = await browser.newPage();
 
-            console.log("Analayzing page " + i);
+        await page.goto(`https://www.cambridge.org/core/journals/american-political-science-review/most-cited`)
+        page.waitForSelector("div.altmetric-embed > a")
 
-            let papersInfo = await page.evaluate(() => {
-                let paperTitle = document.querySelectorAll(".part-link")
-                let paperDate = document.querySelectorAll(".published .date")
-                let analytics_link = document.querySelectorAll(".altmetric-embed.medium-1 > a")
-                let citations_num = document.querySelectorAll(".listing-citation-modal > .number") 
-                let paperInfoArray = []
-                // let offset_for_date = paperDate.length / 2;
-                for (let i = 0; i < analytics_link.length; i++) {
-                    paperInfoArray[i] = {
-                        title: paperTitle[i].innerText.trim(),
-                        date : paperDate[i].innerText.trim(),
-                        link: "https://www.cambridge.org" + paperTitle[i].getAttribute("href"),
-                        analytics_link: "https://cambridge.altmetric.com/details/" + analytics_link[i].getAttribute("href").substr(75) + "/twitter",
-                        citations_num: citations_num[i].innerText.trim()
-                    };
-                }
-                return paperInfoArray;
-            });
-            papers = papers.concat(papersInfo); 
-            console.log("Got data from page " + i) 
+        // click  on Last 3 years
+        console.log("Clicking the button")
+        const lastYearsButton = await page.$(".sort-content  .checkbox[data-agg-container='Last 3 years']");
+        await lastYearsButton.evaluate(lastYearsButton => lastYearsButton.click());
+        console.log("Clicked the button")
+        
+        // TODO: wait a second
+        sleep(1000);
+
+        while(numPagesToAnalyze != 0){
+            currentPageNum = (numPagesToAnalyze > pagesDisplayed) ? pagesDisplayed : numPagesToAnalyze;
+            numPagesToAnalyze -= currentPageNum;
+
+            for (let i = 1; i <= currentPageNum; ++i){
+                console.log("Analayzing page " + i)
+                let papersInfo = await page.evaluate(() => {
+                    let paperTitle = document.querySelectorAll(".part-link")
+                    let paperDate = document.querySelectorAll(".published .date")
+                    let analytics_link = document.querySelectorAll(".altmetric-embed.medium-1 > a")
+                    let citations_num = document.querySelectorAll(".listing-citation-modal > .number") 
+                    let paperInfoArray = []
+                    // let offset_for_date = paperDate.length / 2;
+                    for (let i = 0; i < analytics_link.length; i++) {
+                        paperInfoArray[i] = {
+                            title: paperTitle[i].innerText.trim(),
+                            date : paperDate[i].innerText.trim(),
+                            link: "https://www.cambridge.org" + paperTitle[i].getAttribute("href"),
+                            analytics_link: "https://cambridge.altmetric.com/details/" + analytics_link[i].getAttribute("href").substr(75) + "/twitter",
+                            citations_num: citations_num[i].innerText.trim()
+                        };
+                    }
+                    return paperInfoArray;
+                });
+                papers = papers.concat(papersInfo); 
+                console.log("Got data from page " + i) 
+
+                // Click on the ith page.
+                let nextPageButton = await page.$(".pagination > .current + li");
+                await nextPageButton.evaluate(nextPageButton => nextPageButton.click());
+
+                // Wait a second
+                sleep(1000);
+
+            }
         }
+        
+        
 
         console.log("Now getting twitter data for pages");
 
         // Get analytics data
         for(let j = 0; j < papers.length; ++j) {
-            let paper = papers[j]
+            let paper = papers[j];
             console.log("Getting popularity data for paper " + (j + 1));
             let url = paper.analytics_link;
             let analytics_page = await browser.newPage();
