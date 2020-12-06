@@ -19,22 +19,14 @@ const csvWriter = createCsvWriter({
   ]
 });
 
-sleep = milliseconds => {
-    const date = Date.now();
-    let currentDate = null;
-    do {
-      currentDate = Date.now();
-    } while (currentDate - date < milliseconds);
-  }
 
-
-let papers = []
-let numPages = 10
+let papers = [];
+let numPages = 10;
 
 async function getData() {
     try {
         // Load the headless browser adn the first page
-        const browser = await puppeteer.launch()
+        const browser = await puppeteer.launch();
         let page = await browser.newPage();
 
         await page.goto(`https://www.cambridge.org/core/journals/american-political-science-review/most-cited`)
@@ -70,25 +62,24 @@ async function getData() {
                 }
                 return paperInfoArray;
             });
+
+            // Extend the papers object
             papers = papers.concat(papersInfo); 
-            console.log(`Got data from page ${i}. There were ${papersInfo.length} elements found on that page.`)
+
+            console.log(`Got data from page ${i}. There were ${papersInfo.length} elements found on that page.`);
+
             // Click on next page
-            console.log("Clicking next page");
             let nextPageButton = await page.$(".pagination > .current + li a");
             if (nextPageButton){
                 await nextPageButton.evaluate(nextPageButton => nextPageButton.click());
                 await page.waitForNavigation();
                 await page.waitForTimeout(2000);
             }
-            console.log("Clicked next page");
-            
         }
         
-        
         console.log(`Now getting twitter data for ${papers.length} papers`);
-
         // Get analytics data
-        for(let j = 0; j < papers.length; ++j) {
+        for (let j = 0; j < papers.length; ++j) {
             let paper = papers[j];
             console.log(`Getting popularity data for paper ${j + 1}`);
             let url = paper.analytics_link;
@@ -105,6 +96,8 @@ async function getData() {
                 let beginIndex = attention_url.indexOf("score=") + 6;
                 let endIndex = attention_url.indexOf("&", beginIndex);
                 let attention_score = attention_url.substr(beginIndex, endIndex - beginIndex);
+
+                // Return Twitter data
                 if (twitter_data.length == 3){ 
                     return [parseInt(attention_score), twitter_data[0].innerText, twitter_data[1].innerText, twitter_data[2].innerText]
                 }
@@ -114,9 +107,8 @@ async function getData() {
                 else {
                     return [parseInt(attention_score), 0, 0, 0];
                 }
-            }) 
+            }); 
         }
-
         await browser.close()
     } catch (error) {
         console.error(error)
@@ -127,6 +119,4 @@ getData().then(() => {
     csvWriter
     .writeRecords(papers)
     .then(()=> console.log('The CSV file was written successfully'));
-})
-.catch(err => console.error(err))
-
+}).catch(err => console.error(err))
