@@ -4,7 +4,7 @@ A script to scrape and analyze the popularity and citations of recent research p
 Built for Media and Inequality Lab at Vanderbilt University.
 
 ---
-To run:
+**To run**:
 1. `npm i`
 2. `node scraper`
 
