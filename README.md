@@ -9,3 +9,11 @@ To run:
 2. `node scraper`
 
 The scraper uses [puppeteer](https://developers.google.com/web/tools/puppeteer) (headless browser framework) because citation data and Altmetric links load after JavaScript executes on the page (+ AJAX only pagination). 
+
+
+The script retrieves the following information (in `.csv` format) about publications in the last 3 years:
+
+| Title |	Cambridge link |	Link to Altmetric |	Date of online publication |	Attention Score |	Number of tweets |	Number of users tweeted |	Upper bound of followers | 	Number of citations |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+
+`analysis.Rmd` also includes visualization of the relationship. 
